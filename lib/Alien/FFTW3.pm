@@ -1,6 +1,6 @@
 package Alien::FFTW3;
 
-use stric;
+use strict;
 use warnings;
 our $VERSION = '0.001';
 use parent 'Alien::Base';
