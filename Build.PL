@@ -2,7 +2,6 @@ use strict;
 use warnings;
 
 use Alien::Base::ModuleBuild;
-
 my $builder = Alien::Base::ModuleBuild->new (
     module_name => 'Alien::FFTW3',
     license => 'perl',
@@ -19,12 +18,11 @@ my $builder = Alien::Base::ModuleBuild->new (
     alien_repository => {
 	protocol => 'http',
 	host => 'www.fftw.org',
-	location => '/download.html',
+	location => 'download.html',
 	pattern => qr/fftw-([\d\.]*).tar.gz/
     },
     # alien_build_commands not necessary -- use default configure
     # alien_install_commands not necessary -- use default install
-    # alien_version_check not necessary -- use pkg-config
     
     meta_merge => {
 	resources => {
@@ -36,3 +34,26 @@ my $builder = Alien::Base::ModuleBuild->new (
     );
 
 $builder->create_build_script;
+
+
+__END__
+
+
+use Module::Build;
+
+
+my $builder = new Module::Build( 
+    module_name => 'Alien::FFTW3';
+    needs_compiler => 1,
+    create_packlist => 1,
+    dist_abstract => 'Simple installation and compatibility for FFTW3',
+    dist_author => 'Craig DeForest <deforest@boulder.swri.edu>',
+    dynamic_config=>1,
+    installdirs => 'vendor',
+    license => 'artistic_2',
+    meta_merge => {
+	    homepage => 'https://github.com/drzowie/alien-fftw3',
+	    bugtracker => 'https://github.com/drzowie/alien-fftw3/issues',
+	    repository => 'git://github.com/ddrzowie/alien-fftw3.git'
+    }
+    );
