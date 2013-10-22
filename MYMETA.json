@@ -31,7 +31,7 @@
    "provides" : {
       "Alien::FFTW3" : {
          "file" : "lib/Alien/FFTW3.pm",
-         "version" : "0.001"
+         "version" : "0.01"
       }
    },
    "release_status" : "stable",
@@ -48,5 +48,5 @@
          "url" : "git://github.com/ddrzowie/alien-fftw3.git"
       }
    },
-   "version" : "0.001"
+   "version" : "0.01"
 }
