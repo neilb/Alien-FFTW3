@@ -13,6 +13,10 @@ meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: Alien-FFTW3
+provides:
+  Alien::FFTW3:
+    file: lib/Alien/FFTW3.pm
+    version: 0.001
 requires:
   Alien::Base: 0
   File::ShareDir: 1.00

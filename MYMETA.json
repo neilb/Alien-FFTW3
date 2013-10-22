@@ -28,6 +28,12 @@
          }
       }
    },
+   "provides" : {
+      "Alien::FFTW3" : {
+         "file" : "lib/Alien/FFTW3.pm",
+         "version" : "0.001"
+      }
+   },
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
