@@ -48,6 +48,7 @@ or your own source compilation.
 =head1 DESCRIPTION
 
 This module provides package validation and installation for FFTW3.
+It depends on the external POSIX program pkg-config to find the FFTW3 libraries.
 
 =head1 SEE ALSO
 
