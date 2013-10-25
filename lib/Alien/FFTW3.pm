@@ -8,7 +8,7 @@ Alien::FFTW3 - Alien wrapper for FFTW3
   use warnings;
 
   use Module::Build;
-  use Alien::FFTW3;
+  use Alien::FFTW3 3.3;
 
   my $cflags = Alien::FFTW3->cflags;
   my $ldflags = Alien::FFTW3->libs;
@@ -21,34 +21,46 @@ Alien::FFTW3 - Alien wrapper for FFTW3
 
 =head1 ABSTRACT
 
-Alien wrapper for FFTW3.  Because FFTW3 comes in several flavors for
-different levels of numerical precision, the typical access methods
-'cflags' and 'libs' work slightly differently than the simple 
-Alien::Base case.  You can feed in nothing at all, in which case
-you get back cflags and libs strings appropriate for compiling *all* 
-available fftw3 libraries; or you can specify which precision you want
-by passing in an allowed precision.  The allowed precisions are currently
-'f','d','l', and 'q' for floats, doubles, long doubles, and quad doubles
-respecetively.
-
-On initial use, Alien::FFTW3 checks for which precisions are available.
-If more than zero are available, it succeeds.  If none are available, then
-it fails.
-
-You can query which precisions are installed on your system using the "precision" 
-method, documented below.
-
-As an Alien module, Alien::FFTW3 attempts to build fftw on your system
-from source if it's not found at install time.  Because I'm Lazy, I use the
-existing fine infrastructure from Joel Berger to install in that case.  
-But the default compile only generates the double-precision library, so
-if you want more you'll have to install it yourself with a package manager
-or your own source compilation.
+Alien wrapper for FFTW3.  
 
 =head1 DESCRIPTION
 
 This module provides package validation and installation for FFTW3.
 It depends on the external POSIX program pkg-config to find the FFTW3 libraries.
+
+Because FFTW3 comes in several flavors for different levels of
+numerical precision, the typical access methods 'cflags' and 'libs'
+work slightly differently than the simple Alien::Base case.  You can
+feed in nothing at all, in which case you get back cflags and libs
+strings appropriate for compiling *all* available fftw3 libraries; or
+you can specify which precision you want by passing in an allowed
+precision.  The allowed precisions are currently 'f','d','l', and 'q'
+for floats, doubles, long doubles, and quad doubles respecetively.
+
+On initial use, Alien::FFTW3 checks for which precisions are available.
+If more than zero are available, it succeeds.  If none are available, then
+it fails.
+
+You can query which precisions are installed on your system using the
+"precision" method, documented below.
+
+As an Alien module, Alien::FFTW3 attempts to build fftw on your system
+from source if it's not found at install time.  Because I'm Lazy, I
+use the existing fine infrastructure from Joel Berger to install in
+that case.  But the default compile only generates the
+double-precision library, so if you want more you'll have to install
+it yourself with a package manager or your own source compilation.
+
+You can validate that the FFTW3 library exists and has a certain
+version number -- if you C<< use Alien::FFTW3 <version> >>, then the
+FFTW3 libraries will be checked against that verison number.  Note
+that you must use Perlified version numbers with that syntax --
+e.g. if you want v3.3.4 of the library, you must C<< use Alien::FFTW3
+3.003_004 >>.  The code translates the Perlish version to the
+POSIX-style version string against which to check the library.  If you
+request a particular version number, then all precision variants of
+C<libfftw> available on your system must meet that version number, or
+Alien::FFTW3 will throw an exception.
 
 =head1 SEE ALSO
 
@@ -175,28 +187,65 @@ sub libs {
 ##############################
 # version checker
 
+sub vcmp {
+    my ($v1,$v2) = @_;
+    my $a;
+    for(0..2){
+	$a = $v1->[$_] <=> $v2->[$_];
+	return $a if($a);
+    }
+    return 0;
+}
+
 sub VERSION {
     my $module = shift;
     my $req_v = shift;
 
+    # Do some DWIMming about the version, since Perl numerifies it.
+    # In particular, if the subversion has at least 3 digits,
+    # interpret it as modern Perl multiplexed version number.  If it
+    # has less than that, treat it as a direct subversion (no point
+    # version).  This will break if FFTW ever gets to version 3.10,
+    # which will show up as 3.1 here.
+    my @req_v;
+    if($req_v =~ m/^\s*(\d+)(\.(\d\d\d)(\d*))?\s*$/) {
+	@req_v = ($1, $3//0, $4//0);
+    } elsif( $req_v =~ m/^\s*(\d+)(\.(\d))\s*$/) {
+	@req_v = ($1, $3, 0);
+    } elsif( $req_v =~ m/[vV]?(\d+)(\.(\d+)(\.(\d+))?)?/ ) {
+	@req_v = ($1,$3//0,$5//0);
+    } else {
+	die "Alien::FFTW3 - couldn't parse requested version string '$req_v'";
+    }
+
     my $h = precision();
-    my $pkgs = join(" ", sort values %$h);
+    unless(defined($h)) {
+	die "Alien::FFTW3 - no library found for version check";
+    }
+
+    my @pkgs = sort values %$h;
+    my $pkgs = join(" ", @pkgs);
     
     my @s = map { chomp; $_ } (`pkg-config --modversion $pkgs`);
-    
+    my @versions = ();
+
     my $minv = undef;
 
     for(@s){
 	$_ =~ m/(\d+)(\.(\d+)(\.(\d+))?)?/ || die "Alien::FFTW3 - couldn't parse fftw3 version string '$_'";
-	my $v = $1 + ($3//0)/1000 + ($5//0)/1000/1000;
-	if( !defined($minv)  or  $minv > $v ) {
-	    $minv = $v;
+	push(@versions, $_);
+	my @v = ($1,$3//0,$5//0);
+	if( !defined($minv)  or  vcmp($minv,\@v)>0 ) {
+	    $minv = [@v];
 	}
     }
 
-    if($minv < $req_v) {
-	die "Alien::FFTW3 - requested FFTW version $req_v; found only $minv\n";
+    if( vcmp($minv, \@req_v) < 0 ) {
+	$req_v = sprintf("v%d.%d.%d",@req_v);
+	die "Alien::FFTW3 - installed FFTW version is too low (looking for $req_v):\n".
+	    join( "", map { sprintf("   %6.6s library has v%s\n",$pkgs[$_],$versions[$_]) } (0..$#pkgs));
     }
+
 }
 
 

@@ -49,7 +49,7 @@ my $prefix = "%s";
 
 if($dest_libdir) {
     my $s = $dest_libdir;
-    if( $s =~ s:(.*)\/[^\/]+:$1: ) {  # lop off the lib part
+    if( $s =~ s:(.*)\/[^\/]+:$1: ) {  # lop off the final directory (lib part)
 	$prefix = $s;
     }
 } else {
@@ -60,13 +60,22 @@ if($dest_libdir) {
     }
 }
 
-print "prefix=$prefix\n";
-print "libdir=$dest_libdir\n";
+unless(`pkg-config --libs fftw3`) {
+    print <<"FOO"
+Alien::FFTW3: fftw3 library not found.  On "Build install", I will attempt to 
+fetch and build the fftw3 library and install it into the '$prefix' tree (the 
+floating-point and double-precision variants only).  The libraries will get
+installed into '$dest_libdir'. 
+
+FOO
+}
+
 
 ##############################
 # Finally -- do the building.
 
 use Alien::Base::ModuleBuild;
+
 my $builder = Alien::Base::ModuleBuild->new (
     module_name => 'Alien::FFTW3',
     license => 'perl',
@@ -87,7 +96,7 @@ my $builder = Alien::Base::ModuleBuild->new (
 	pattern => qr/fftw-(3\.[\d\.]*).tar.gz/
     },
 
-    # Build the double-precision library on build
+    # Do nothing on build.
     alien_build_commands => [
     ],
 
@@ -95,15 +104,15 @@ my $builder = Alien::Base::ModuleBuild->new (
 
     # Install the double-precision library on install, and then
     # build and install the single-precision library as well.
-    alien_install_commands => [
+    alien_install_commands => (my $alien_install_commands =  [
 	"%pconfigure --prefix=$prefix ".($dest_libdir?"--libdir=$dest_libdir":""),
 	'make',
 	'make install',
-	"%pconfigure --prefix=$prefix --enable-single ".($dest_libdir?"--libdir=$dest_libdir":""),
+	"%pconfigure --prefix=$prefix ".($dest_libdir?"--libdir=$dest_libdir":""). " --enable-single ",
 	'make',
 	'make install',
 	$bonus_install_command || "echo 1"
-    ],
+    ]),
 	
     # alien_build_commands not necessary -- use default configure
     # alien_install_commands not necessary -- use default install
@@ -116,6 +125,7 @@ my $builder = Alien::Base::ModuleBuild->new (
 	}
     }
     );
+
 
 $builder->create_build_script;
 
