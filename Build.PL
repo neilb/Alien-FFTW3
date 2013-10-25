@@ -60,16 +60,29 @@ if($dest_libdir) {
     }
 }
 
+my $alien_install_commands = [];
+
+
 unless(`pkg-config --libs fftw3`) {
-    print <<"FOO"
+    print <<"FOO";
 Alien::FFTW3: fftw3 library not found.  On "Build install", I will attempt to 
 fetch and build the fftw3 library and install it into the '$prefix' tree (the 
 floating-point and double-precision variants only).  The libraries will get
 installed into '$dest_libdir'. 
 
 FOO
-}
 
+$alien_install_commands =  [
+    "%pconfigure --prefix=$prefix ".($dest_libdir?"--libdir=$dest_libdir":""),
+    'make',
+    'make install',
+    "%pconfigure --prefix=$prefix ".($dest_libdir?"--libdir=$dest_libdir":""). " --enable-single ",
+    'make',
+    'make install',
+    $bonus_install_command || "echo 1"
+]
+}
+    
 
 ##############################
 # Finally -- do the building.
@@ -102,17 +115,8 @@ my $builder = Alien::Base::ModuleBuild->new (
 
     install_type => 'system',
 
-    # Install the double-precision library on install, and then
-    # build and install the single-precision library as well.
-    alien_install_commands => (my $alien_install_commands =  [
-	"%pconfigure --prefix=$prefix ".($dest_libdir?"--libdir=$dest_libdir":""),
-	'make',
-	'make install',
-	"%pconfigure --prefix=$prefix ".($dest_libdir?"--libdir=$dest_libdir":""). " --enable-single ",
-	'make',
-	'make install',
-	$bonus_install_command || "echo 1"
-    ]),
+    # Do the installation on install...
+    alien_install_commands =>  $alien_install_commands ,
 	
     # alien_build_commands not necessary -- use default configure
     # alien_install_commands not necessary -- use default install

@@ -201,31 +201,8 @@ sub VERSION {
     my $module = shift;
     my $req_v = shift;
 
-    # Do some DWIMming about the version, since Perl numerifies it.
-    # In particular, if the subversion has at least 3 digits,
-    # interpret it as modern Perl multiplexed version number.  If it
-    # has less than that, treat it as a direct subversion (no point
-    # version).  This will break if FFTW ever gets to version 3.10,
-    # which will show up as 3.1 here.
-    my @req_v;
-    if($req_v =~ m/^\s*(\d+)(\.(\d\d\d)(\d*))?\s*$/) {
-	@req_v = ($1, $3//0, $4//0);
-    } elsif( $req_v =~ m/^\s*(\d+)(\.(\d))\s*$/) {
-	@req_v = ($1, $3, 0);
-    } elsif( $req_v =~ m/[vV]?(\d+)(\.(\d+)(\.(\d+))?)?/ ) {
-	@req_v = ($1,$3//0,$5//0);
-    } else {
-	die "Alien::FFTW3 - couldn't parse requested version string '$req_v'";
-    }
-
-    my $h = precision();
-    unless(defined($h)) {
-	die "Alien::FFTW3 - no library found for version check";
-    }
-
-    my @pkgs = sort values %$h;
-    my $pkgs = join(" ", @pkgs);
-    
+    ##############################
+    # Get the version number from fftw3.
     my @s = map { chomp; $_ } (`pkg-config --modversion $pkgs`);
     my @versions = ();
 
@@ -240,12 +217,41 @@ sub VERSION {
 	}
     }
 
-    if( vcmp($minv, \@req_v) < 0 ) {
-	$req_v = sprintf("v%d.%d.%d",@req_v);
-	die "Alien::FFTW3 - installed FFTW version is too low (looking for $req_v):\n".
-	    join( "", map { sprintf("   %6.6s library has v%s\n",$pkgs[$_],$versions[$_]) } (0..$#pkgs));
+    if( $req_v // "" ) {
+	##############################
+	# Do some DWIMming about the version, since Perl numerifies it.
+	# In particular, if the subversion has at least 3 digits,
+	# interpret it as modern Perl multiplexed version number.  If it
+	# has less than that, treat it as a direct subversion (no point
+	# version).  This will break if FFTW ever gets to version 3.10,
+	# which will show up as 3.1 here.
+	my @req_v;
+	if($req_v =~ m/^\s*(\d+)(\.(\d\d\d)(\d*))?\s*$/) {
+	    @req_v = ($1, $3//0, $4//0);
+	} elsif( $req_v =~ m/^\s*(\d+)(\.(\d))\s*$/) {
+	    @req_v = ($1, $3, 0);
+	} elsif( $req_v =~ m/[vV]?(\d+)(\.(\d+)(\.(\d+))?)?/ ) {
+	    @req_v = ($1,$3//0,$5//0);
+	} else {
+	    die "Alien::FFTW3 - couldn't parse requested version string '$req_v'";
+	}
+	
+	my $h = precision();
+	unless(defined($h)) {
+	    die "Alien::FFTW3 - no library found for version check";
+	}
+	
+	my @pkgs = sort values %$h;
+	my $pkgs = join(" ", @pkgs);
+	
+	if( vcmp($minv, \@req_v) < 0 ) {
+	    $req_v = sprintf("v%d.%d.%d",@req_v);
+	    print STDERR "Alien::FFTW3 - installed FFTW version is too low (looking for $req_v):\n".
+		join( "", map { sprintf("   %6.6s library has v%s\n",$pkgs[$_],$versions[$_]) } (0..$#pkgs));
+	}
     }
 
+    return $minv[0]+($minv[1]//0)/1000+($minv[2]//0)/1000000;
 }
 
 
