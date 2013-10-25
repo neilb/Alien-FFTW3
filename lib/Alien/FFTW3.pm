@@ -62,7 +62,9 @@ package Alien::FFTW3;
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+
+# $VERSION is here for CPAN to parse -- but there is a sub below to pull the fftw library version.
+our $VERSION = '0.02';
 use parent 'Alien::Base';
 
 our $pkgconfig;
@@ -169,7 +171,33 @@ sub libs {
     chomp $s;
     return $s;
 }
- 
+
+##############################
+# version checker
+
+sub VERSION {
+    my $module = shift;
+    my $req_v = shift;
+
+    my $h = precision();
+    my $pkgs = join(" ", sort values %$h);
+    
+    my @s = map { chomp; $_ } (`pkg-config --modversion $pkgs`);
+    
+    my $minv = undef;
+
+    for(@s){
+	$_ =~ m/(\d+)(\.(\d+)(\.(\d+))?)?/ || die "Alien::FFTW3 - couldn't parse fftw3 version string '$_'";
+	my $v = $1 + ($3//0)/1000 + ($5//0)/1000/1000;
+	if( !defined($minv)  or  $minv > $v ) {
+	    $minv = $v;
+	}
+    }
+
+    if($minv < $req_v) {
+	die "Alien::FFTW3 - requested FFTW version $req_v; found only $minv\n";
+    }
+}
 
 
 ##############################
