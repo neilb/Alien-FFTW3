@@ -1,0 +1,92 @@
+=head1 NAME
+
+Alien::FFTW3 - Alien wrapper for FFTW3
+
+=head1 SYNOPSIS
+
+  use strict;
+  use warnings;
+
+  use Module::Build;
+  use Alien::FFTW3 3.003_002;  # Require fftw v3.3.2 or later
+
+  my $cflags = Alien::FFTW3->cflags;
+  my $ldflags = Alien::FFTW3->libs;
+
+  if( Alien::FFTW3->precision('q') ) {
+    # compile quad-precision library...
+  }
+
+  my $cflags_for_float = Alien::FFTW3->cflags('f');
+
+=head1 ABSTRACT
+
+Alien wrapper for FFTW3.  
+
+=head1 DESCRIPTION
+
+This module provides package validation and installation for FFTW3.
+It currently depends on the external POSIX program pkg-config to find
+the FFTW3 libraries.
+
+Because FFTW3 comes in several flavors for different levels of
+numerical precision, the typical access methods 'cflags' and 'libs'
+work slightly differently than the simple Alien::Base case.  You can
+feed in nothing at all, in which case you get back cflags and libs
+strings appropriate for compiling *all* available fftw3 libraries; or
+you can specify which precision you want by passing in an allowed
+precision.  The allowed precisions are currently 'f','d','l', and 'q'
+for floats, doubles, long doubles, and quad doubles respecetively.
+
+On initial use, Alien::FFTW3 checks for which precisions are
+available.  If more than zero are available, it succeeds.  If none are
+available, then it fails.  If you specify a version number, it is
+translated from Perl-style version numbers to a POSIX module version
+string.  The load will throw an exception unless every located libfftw
+external library is at that version or later.
+
+You can query which precisions are installed on your system using the
+"precision" method, documented below.
+
+As an Alien module, Alien::FFTW3 attempts to build fftw on your system
+from source if it's not found at install time.  Because I'm Lazy, I
+use the existing Alien::Base infrastructure from Joel Berger to
+install in that case.  
+
+Alien::Base isn't capable of installing the library in a place where
+the default pkg-config will find it on all systems, so there is some
+logic to place it in a best guess for where system libraries "should"
+go on your system: we examine the path searched by pkg-config and 
+place the fftw library in a suitable spot that can be located.
+
+=head1 SEE ALSO
+
+Alien::Base, PDL::FFTW3, http://fftw.org
+
+=head1 METHODS
+
+=head2 precision
+
+=for ref
+
+Test presence of fftw3 libs with different precisions.  Returns a hash ref
+with keys set to TRUE for each library queried, or undef if none of the
+queried libraries exist.  If you pass in no arguments, all precisions 
+are tested.
+
+The allowed precisions are 'f','d','l', and 'q'. 
+
+You can pass them in as an array ref or as a single packed string.
+
+=head2 cflags
+
+=for ref
+
+Returns the cflags compiler flags required for the specified precision, or for all of 'em.
+
+=head2 libs
+
+=for ref
+
+Returns the libs linker flags required for the specified precision, or for all of 'em.
+
