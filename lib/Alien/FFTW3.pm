@@ -191,7 +191,7 @@ sub vcmp {
     my ($v1,$v2) = @_;
     my $a;
     for(0..2){
-	$a = $v1->[$_] <=> $v2->[$_];
+	$a = ($v1->[$_]//0) <=> ($v2->[$_]//0);
 	return $a if($a);
     }
     return 0;
@@ -203,11 +203,19 @@ sub VERSION {
 
     ##############################
     # Get the version number from fftw3.
+    my $h = precision();
+    unless(defined($h)) {
+	die "Alien::FFTW3 - no library found for version check";
+    }
+    
+    my @pkgs = sort values %$h;
+    my $pkgs = join(" ", @pkgs);
+    
     my @s = map { chomp; $_ } (`pkg-config --modversion $pkgs`);
     my @versions = ();
-
+    
     my $minv = undef;
-
+    
     for(@s){
 	$_ =~ m/(\d+)(\.(\d+)(\.(\d+))?)?/ || die "Alien::FFTW3 - couldn't parse fftw3 version string '$_'";
 	push(@versions, $_);
@@ -235,23 +243,15 @@ sub VERSION {
 	} else {
 	    die "Alien::FFTW3 - couldn't parse requested version string '$req_v'";
 	}
-	
-	my $h = precision();
-	unless(defined($h)) {
-	    die "Alien::FFTW3 - no library found for version check";
-	}
-	
-	my @pkgs = sort values %$h;
-	my $pkgs = join(" ", @pkgs);
-	
+		
 	if( vcmp($minv, \@req_v) < 0 ) {
 	    $req_v = sprintf("v%d.%d.%d",@req_v);
-	    print STDERR "Alien::FFTW3 - installed FFTW version is too low (looking for $req_v):\n".
+	    die "Alien::FFTW3 - installed FFTW version is too low (looking for $req_v):\n".
 		join( "", map { sprintf("   %6.6s library has v%s\n",$pkgs[$_],$versions[$_]) } (0..$#pkgs));
 	}
     }
 
-    return $minv[0]+($minv[1]//0)/1000+($minv[2]//0)/1000000;
+    return $minv->[0]+($minv->[1]//0)/1000+($minv->[2]//0)/1000000;
 }
 
 
