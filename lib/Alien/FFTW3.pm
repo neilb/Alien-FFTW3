@@ -8,7 +8,7 @@ Alien::FFTW3 - Alien wrapper for FFTW3
   use warnings;
 
   use Module::Build;
-  use Alien::FFTW3 3.3;
+  use Alien::FFTW3 3.003_002;  # Require fftw v3.3.2 or later
 
   my $cflags = Alien::FFTW3->cflags;
   my $ldflags = Alien::FFTW3->libs;
@@ -26,7 +26,8 @@ Alien wrapper for FFTW3.
 =head1 DESCRIPTION
 
 This module provides package validation and installation for FFTW3.
-It depends on the external POSIX program pkg-config to find the FFTW3 libraries.
+It currently depends on the external POSIX program pkg-config to find
+the FFTW3 libraries.
 
 Because FFTW3 comes in several flavors for different levels of
 numerical precision, the typical access methods 'cflags' and 'libs'
@@ -37,30 +38,26 @@ you can specify which precision you want by passing in an allowed
 precision.  The allowed precisions are currently 'f','d','l', and 'q'
 for floats, doubles, long doubles, and quad doubles respecetively.
 
-On initial use, Alien::FFTW3 checks for which precisions are available.
-If more than zero are available, it succeeds.  If none are available, then
-it fails.
+On initial use, Alien::FFTW3 checks for which precisions are
+available.  If more than zero are available, it succeeds.  If none are
+available, then it fails.  If you specify a version number, it is
+translated from Perl-style version numbers to a POSIX module version
+string.  The load will throw an exception unless every located libfftw
+external library is at that version or later.
 
 You can query which precisions are installed on your system using the
 "precision" method, documented below.
 
 As an Alien module, Alien::FFTW3 attempts to build fftw on your system
 from source if it's not found at install time.  Because I'm Lazy, I
-use the existing fine infrastructure from Joel Berger to install in
-that case.  But the default compile only generates the
-double-precision library, so if you want more you'll have to install
-it yourself with a package manager or your own source compilation.
+use the existing Alien::Base infrastructure from Joel Berger to
+install in that case.  
 
-You can validate that the FFTW3 library exists and has a certain
-version number -- if you C<< use Alien::FFTW3 <version> >>, then the
-FFTW3 libraries will be checked against that verison number.  Note
-that you must use Perlified version numbers with that syntax --
-e.g. if you want v3.3.4 of the library, you must C<< use Alien::FFTW3
-3.003_004 >>.  The code translates the Perlish version to the
-POSIX-style version string against which to check the library.  If you
-request a particular version number, then all precision variants of
-C<libfftw> available on your system must meet that version number, or
-Alien::FFTW3 will throw an exception.
+Alien::Base isn't capable of installing the library in a place where
+the default pkg-config will find it on all systems, so there is some
+logic to place it in a best guess for where system libraries "should"
+go on your system: we examine the path searched by pkg-config and 
+place the fftw library in a suitable spot that can be located.
 
 =head1 SEE ALSO
 

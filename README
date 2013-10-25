@@ -10,6 +10,6 @@ it and/or modify it under the same terms as Perl
 5.10-5.16.  For more details, see the full text of the
 licenses in the directory LICENSES.
 
-Thanks to Joel Berger for writing Alien::Base, which
-makes this process almost trivial.
+Thanks to Joel Berger for writing Alien::Base.
+
 

@@ -14,7 +14,7 @@ name: Alien-FFTW3
 provides:
   Alien::FFTW3:
     file: lib/Alien/FFTW3.pm
-    version: 0.01
+    version: 0.02
 requires:
   Alien::Base: 0
   File::ShareDir: 1.00
@@ -24,4 +24,4 @@ resources:
   homepage: https://github.com/drzowie/alien-fftw3
   license: http://dev.perl.org/licenses/
   repository: git://github.com/ddrzowie/alien-fftw3.git
-version: 0.01
+version: 0.02
